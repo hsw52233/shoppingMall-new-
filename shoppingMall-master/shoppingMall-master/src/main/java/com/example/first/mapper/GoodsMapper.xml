@@ -97,7 +97,9 @@
 		    g.goods_price goodsPrice,
 		    g.goods_state goodsState,
 		    c.category_title categoryTitle,
-		    g.category_no categoryNo
+		    g.category_no categoryNo,
+		    DATE_FORMAT(g.create_date, '%Y-%m-%d') createDate,
+        DATE_FORMAT(g.update_date, '%Y-%m-%d') updateDate
 		from goods g
 		inner join category c on g.category_no = c.category_no
 		where g.goods_no = #{goodsNo}

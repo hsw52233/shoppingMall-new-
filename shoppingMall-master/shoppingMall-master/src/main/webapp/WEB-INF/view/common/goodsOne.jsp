@@ -140,8 +140,17 @@
 		                        품절
 		                    </button>
 					    </c:if>
+					  
 		                </div>
 		            </div>
+		             <div class="mt-4">
+    <div class="fs-5 fw-bold text-secondary mb-2">
+        출고일: ${goods.createDate}
+    </div>
+    <div class="fs-5 fw-bold text-secondary">
+        반품일: ${goods.updateDate}
+    </div>
+</div>
 		        </div>
 		</section>
     <div>
