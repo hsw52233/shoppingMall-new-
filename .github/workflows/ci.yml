@@ -29,7 +29,7 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package 
-      working-directory : shoppingMall-master
+      working-directory : shoppingMall-master/shoppingMall-master
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
