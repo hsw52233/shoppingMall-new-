@@ -11,6 +11,10 @@ jobs:
   build-project:
     name: Build Project
     runs-on: ubuntu-latest
+    
+    # [수정] 5번 단계(의존성 그래프)가 GitHub에 데이터를 쓰기(write)위해 필요한 권한을 추가합니다.
+    permissions:
+      contents: write
 
     steps:
       # --- 1. 코드 체크아웃 ---
