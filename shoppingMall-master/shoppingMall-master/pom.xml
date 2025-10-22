@@ -95,7 +95,22 @@
 		</dependency>
 </dependencies>
 	<build>
+	<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>src/main/java</directory>
+				<includes>
+					<!-- src/main/java 아래 모든 패키지 내부의 .xml 파일을 포함시킵니다. -->
+					<include>**/*.xml</include>
+				</includes>
+			</resource>
+		</resources>
 		<plugins>
+		<!--Buildpacks를 통한 이미지 배포
+			Dockerfile을 필요로 하지 않고 SpringBoot의 buildpacks를 통해서 이미지를 생성한다.
+		-->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -106,8 +121,18 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					
 				</configuration>
 			</plugin>
+			
+			<plugin>
+				<groupId>com.google.cloud.tools</groupId>
+				<artifactId>jib-maven-plugin</artifactId>
+				<version>3.3.2</version>
+				
+			</plugin>
+			
+			
 		</plugins>
 	</build>
 

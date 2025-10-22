@@ -1,35 +1,71 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
+# name: Build. 어떤 브랜치에서든 코드가 push될 때마다 workflow가 실행
 name: Java CI with Maven
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [ "**" ]
 
 jobs:
-  build:
-
+  build-bookmark-api:
+    name: Build bookmark-api
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./bookmarker-api
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      # --- 1. 코드 체크아웃 ---
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+      # --- 2. JDK 17 설정 ---
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # --- 3. Maven으로 빌드 및 테스트 ---
+      # Maven build 작업 시 권한으로 인한 접근 허용
+      - name: Build with Maven
+        run: |
+          # Maven Wrapper(mvnw)에 실행 권한을 부여합니다.
+          chmod +x mvnw
+          # 'verify'는 'package' 단계를 포함하며, 테스트도 함께 실행합니다.
+          ./mvnw verify
+
+      # --- 4. Docker 이미지 빌드 및 푸시 (main 브랜치만) ---
+      # docker의 tty 명령어를 사용하기 위한 환경설정
+      - name: Build and Publish Docker Image
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          # 1. 'jib:dockerBuild'는 Dockerfile을 사용하지 않는 별도 방식입니다.
+          #    'docker build'를 사용하려면 .jar 파일만 생성해야 하므로 'package'로 변경합니다.
+          #    -DskipTests=true를 추가하여 3번 단계에서 실행한 테스트를 건너뜁니다.
+          ./mvnw clean package -DskipTests=true
+          
+          # 2. Docker Hub에 로그인합니다.
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          
+          # 3. 'bookmarker-api' 디렉터리의 Dockerfile을 사용해 이미지를 빌드합니다.
+          docker build -t myimage:latest .
+          
+          # 4. 푸시할 이름으로 태그를 지정합니다. (오타 DOCKT_ -> DOCKER_ 수정)
+          docker tag myimage:latest ${{ secrets.DOCKER_USERNAME }}/bookmarker-api:latest
+          
+          # 5. Docker Hub로 이미지를 푸시합니다.
+          docker push ${{ secrets.DOCKER_USERNAME }}/bookmarker-api:latest
+        
+        env:
+          DOCKER_BUILDKIT: 1
+          DOCKER_CLI_EXPERIMENTAL: enabled
+
+      # --- 5. (선택) 의존성 그래프 업데이트 ---
+      # Dependabot 알림 품질을 향상시키기 위해 의존성 정보를 GitHub에 제출합니다.
+      - name: Update dependency graph
+        uses: advanced-security/maven-dependency-submission-action@v4
+
