@@ -9,12 +9,13 @@ on:
     branches: [ "**" ]
 
 jobs:
-  build-bookmark-api:
-    name: Build bookmark-api
+  build-project: # Job 이름을 "build-bookmark-api"에서 더 일반적인 이름으로 변경했습니다.
+    name: Build Project
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./bookmarker-api
+        # [수정됨] working-directory 경로를 실제 프로젝트 위치로 변경합니다.
+        working-directory: shoppingMall-master/shoppingMall-master
 
     steps:
       # --- 1. 코드 체크아웃 ---
@@ -38,10 +39,11 @@ jobs:
           # 'verify'는 'package' 단계를 포함하며, 테스트도 함께 실행합니다.
           ./mvnw verify
 
-      # --- 4. Docker 이미지 빌드 및 푸시 (main 브랜치만) ---
+      # --- 4. Docker 이미지 빌드 및 푸시 (main 또는 master 브랜치만) ---
       # docker의 tty 명령어를 사용하기 위한 환경설정
       - name: Build and Publish Docker Image
-        if: ${{ github.ref == 'refs/heads/main' }}
+        # main 브랜치 또는 master 브랜치일 때 실행하도록 조건을 수정했습니다.
+        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
         run: |
           # 1. 'jib:dockerBuild'는 Dockerfile을 사용하지 않는 별도 방식입니다.
           #    'docker build'를 사용하려면 .jar 파일만 생성해야 하므로 'package'로 변경합니다.
@@ -51,14 +53,15 @@ jobs:
           # 2. Docker Hub에 로그인합니다.
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
           
-          # 3. 'bookmarker-api' 디렉터리의 Dockerfile을 사용해 이미지를 빌드합니다.
+          # 3. 현재 디렉터리(shoppingMall-master/shoppingMall-master)의 Dockerfile을 사용해 이미지를 빌드합니다.
           docker build -t myimage:latest .
           
           # 4. 푸시할 이름으로 태그를 지정합니다. (오타 DOCKT_ -> DOCKER_ 수정)
-          docker tag myimage:latest ${{ secrets.DOCKER_USERNAME }}/bookmarker-api:latest
+          #    이미지 이름을 레포지토리 이름과 맞추는 것이 좋습니다 (예: shoppingmall)
+          docker tag myimage:latest ${{ secrets.DOCKER_USERNAME }}/shoppingmall-api:latest
           
           # 5. Docker Hub로 이미지를 푸시합니다.
-          docker push ${{ secrets.DOCKER_USERNAME }}/bookmarker-api:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/shoppingmall-api:latest
         
         env:
           DOCKER_BUILDKIT: 1
@@ -68,4 +71,3 @@ jobs:
       # Dependabot 알림 품질을 향상시키기 위해 의존성 정보를 GitHub에 제출합니다.
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4
-
