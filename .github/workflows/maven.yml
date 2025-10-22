@@ -19,12 +19,14 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # --- Maven 빌드 ---
       - name: Build with Maven
         working-directory: shoppingMall-master/shoppingMall-master
         run: |
           chmod +x mvnw
           ./mvnw verify
 
+      # --- Docker 빌드 및 푸시 ---
       - name: Build and Publish Docker Image
         if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
         working-directory: shoppingMall-master/shoppingMall-master
@@ -38,7 +40,8 @@ jobs:
           DOCKER_BUILDKIT: 1
           DOCKER_CLI_EXPERIMENTAL: enabled
 
+      # --- 의존성 그래프 업데이트 ---
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4
         with:
-          directory: shoppingMall-master/shoppingMall-master
+          directory: .
