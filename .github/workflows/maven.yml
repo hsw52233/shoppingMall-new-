@@ -71,3 +71,7 @@ jobs:
       # Dependabot 알림 품질을 향상시키기 위해 의존성 정보를 GitHub에 제출합니다.
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4
+        with:
+          # [추가됨] 이 action이 실행될 작업 디렉터리를 지정합니다.
+          working-directory: shoppingMall-master/shoppingMall-master
+
