@@ -1,3 +1,6 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
 name: Java CI with Maven
 
 on:
@@ -6,42 +9,66 @@ on:
 
 jobs:
   build-project:
+    name: Build Project
     runs-on: ubuntu-latest
 
     steps:
+      # --- 1. 코드 체크아웃 ---
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # --- 2. JDK 17 설정 ---
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
+          
+      # --- [추가] 디버깅 단계: 파일 목록 확인 ---
+      - name: Check file structure (DEBUG)
+        run: |
+          echo "--- 현재 폴더 위치 ---"
+          pwd
+          echo "--- 루트 디렉터리 파일 목록 (ls -l) ---"
+          ls -l
+          echo "--- 'shoppingMall-master' 폴더 내용 확인 ---"
+          ls -l shoppingMall-master
+          echo "--- 'shoppingMall-master/shoppingMall-master' 폴더 내용 확인 ---"
+          ls -l shoppingMall-master/shoppingMall-master
 
-      # --- Maven 빌드 ---
+      # --- 3. Maven으로 빌드 및 테스트 ---
       - name: Build with Maven
         working-directory: shoppingMall-master/shoppingMall-master
         run: |
           chmod +x mvnw
           ./mvnw verify
 
-      # --- Docker 빌드 및 푸시 ---
+      # --- 4. Docker 이미지 빌드 및 푸시 (main 또는 master 브랜치만) ---
       - name: Build and Publish Docker Image
         if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
         working-directory: shoppingMall-master/shoppingMall-master
         run: |
           ./mvnw clean package -DskipTests=true
+          
+          # [수정] DOCKT_ -> DOCKER_ 오타 수정
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          
           docker build -t myimage:latest .
+          
+          # [수정] DOCKT_ -> DOCKER_ 오타 수정
           docker tag myimage:latest ${{ secrets.DOCKER_USERNAME }}/shoppingmall-api:latest
+          
+          # [수정] DOCKT_ -> DOCKER_ 오타 수정
           docker push ${{ secrets.DOCKER_USERNAME }}/shoppingmall-api:latest
+        
         env:
           DOCKER_BUILDKIT: 1
           DOCKER_CLI_EXPERIMENTAL: enabled
 
-      # --- 의존성 그래프 업데이트 ---
+      # --- 5. (선택) 의존성 그래프 업데이트 ---
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4
         with:
-          directory: .
+          directory: shoppingMall-master/shoppingMall-master
+
